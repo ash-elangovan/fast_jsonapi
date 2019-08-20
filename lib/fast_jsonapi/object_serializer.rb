@@ -45,7 +45,7 @@ module FastJsonapi
 
       serializable_hash[:data] = self.class.record_hash(@resource, @fieldsets[self.class.record_type.to_sym], @params)
       serializable_hash[:included] = self.class.get_included_records(@resource, @includes, @known_included_objects, @fieldsets, @params) if @includes.present?
-      serializable_hash
+      transform_meta_and_link_keys(serializable_hash)
     end
 
     def hash_for_collection
@@ -63,7 +63,7 @@ module FastJsonapi
       serializable_hash[:included] = included if @includes.present?
       serializable_hash[:meta] = @meta if @meta.present?
       serializable_hash[:links] = @links if @links.present?
-      serializable_hash
+      transform_meta_and_link_keys(serializable_hash)
     end
 
     def serialized_json
@@ -71,6 +71,12 @@ module FastJsonapi
     end
 
     private
+
+    def transform_meta_and_link_keys(serializable_hash)
+      serializable_hash[:meta] = serializable_hash.fetch(:meta, {}).transform_keys { |k| self.class.run_key_transform(k) }
+      serializable_hash[:links] = serializable_hash.fetch(:links, {}).transform_keys { |k| self.class.run_key_transform(k) }
+      serializable_hash
+    end
 
     def process_options(options)
       @fieldsets = deep_symbolize(options[:fields].presence || {})
